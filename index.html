@@ -3,31 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Bharat Education Center - Online Test Portal</title>
+    <title>Bharat Education Center</title>
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- Font Awesome Icons -->
+    
+    <!-- Google Fonts: Cambria (Fallback) & Poppins -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <!-- SheetJS (XLSX) Library for Excel Upload -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <!-- FontAwesome Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
-    <!-- Google Fonts: Inter, Noto Sans Gujarati, Cambria & Poppins -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Gujarati:wght@400;500;600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-
+	<!-- Google Fonts: Noto Sans Gujarati, Inter, Cambria -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Gujarati:wght@400;500;600;700&display=swap" rel="stylesheet">
     <!-- Supabase JS Client CDN -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
     <!-- SheetJS & html2canvas -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-
-    <!-- ================================================================= -->
-    <!-- SECTION 1: THEME STYLING, FONTS & PRINT MEDIA SETUP              -->
-    <!-- (Ahiya font, theme colors ane mobile responsiveness CSS chhe)      -->
-    <!-- ================================================================= -->
     <style>
         body { 
-            font-family: 'Inter', 'Poppins', system-ui, -apple-system, sans-serif;
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
             user-select: none;
             -webkit-user-select: none;
             background-color: #f8fafc;
@@ -46,14 +48,6 @@
             align-items: center;
             justify-content: center;
         }
-        /* Mobile Auto-Adjustable Logo Container */
-        .brand-logo-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-shrink: 0;
-        }
-        /* Printable Sheet Styling */
         @media print {
             body * { visibility: hidden; }
             #printable-result-section, #printable-result-section * { visibility: visible; }
@@ -64,28 +58,49 @@
 </head>
 <body class="min-h-screen flex flex-col justify-between">
 
-    <!-- ================================================================= -->
-    <!-- SECTION 2: TOP HEADER, LOGO & NAVIGATION NAVBAR                   -->
-    <!-- (Header, Logo Auto-Fit, Institute Title & Language Switcher)      -->
-    <!-- ================================================================= -->
+    <!-- Foreground Custom Popup Modal with Outside Click & Close Button -->
+    <div id="custom-alert-modal" onclick="checkOutsideModalClick(event, 'custom-alert-modal')" class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[99999] modal-center p-4">
+        <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-slate-200 text-center space-y-4 relative">
+            <button onclick="closeModalDirect('custom-alert-modal')" class="absolute top-3 right-3 text-slate-400 hover:text-slate-700 text-base font-bold"><i class="fa-solid fa-xmark"></i></button>
+            <div id="alert-icon-wrapper" class="w-18 h-12 mx-auto full bg-blue-100 text-blue-600 flex items-center justify-center text-xl">
+                <i class="fa-solid fa-circle-info"></i>
+            </div>
+            <p id="custom-alert-text" class="text-sm font-semibold text-slate-800">--</p>
+            <button onclick="closeModalDirect('custom-alert-modal')" class="w-full py-2.5 bg-blue-600 text-white font-bold rounded-xl text-xs hover:bg-blue-700 transition">OK</button>
+        </div>
+    </div>
+
+    <!-- Teacher Login Modal with Outside Click & Auto-Focus PIN -->
+    <div id="teacher-login-modal" onclick="checkOutsideModalClick(event, 'teacher-login-modal')" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[99999] modal-center p-4">
+        <div class="bg-white rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl border border-slate-200 text-center space-y-4 relative">
+            <button onclick="closeTeacherLoginModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 text-base font-bold"><i class="fa-solid fa-xmark"></i></button>
+            <div class="w-12 h-12 mx-auto rounded-2xl bg-slate-900 text-white flex items-center justify-center text-lg shadow-md">
+                <i class="fa-solid fa-lock"></i>
+            </div>
+            <div>
+                <h3 class="text-base font-bold text-slate-900">Teacher Login</h3>
+                <p class="text-xs text-slate-500 mt-1">Please Enter 5-Digit PIN:</p>
+            </div>
+            <input type="password" id="teacher-pin-input" maxlength="5" oninput="handleTeacherPinInput(this)" placeholder="Enter PIN" class="w-full text-center px-4 py-3 rounded-xl border border-slate-300 text-base font-bold tracking-widest outline-none focus:ring-2 focus:ring-slate-900">
+            <div class="flex gap-2 pt-1">
+                <button onclick="closeTeacherLoginModal()" class="w-full py-2.5 bg-slate-100 text-slate-600 font-bold text-xs rounded-xl hover:bg-slate-200 transition">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Header (Mobile Responsive) -->
     <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-sm">
-        <div class="max-w-6xl mx-auto px-3 py-2 sm:py-2.5 flex justify-between items-center gap-2 flex-wrap">
-            <!-- Logo + Title Box -->
-            <div class="flex items-center gap-2 sm:gap-2.5">
-                <!-- Auto-Adjustable Responsive Logo Container -->
-                <div class="brand-logo-container h-9 w-9 sm:h-11 sm:w-11 max-h-12 max-w-12">
-                    <img src="https://fixnefvoznegothpmehu.supabase.co/storage/v1/object/public/bharat%20education/bharat_logo.jpeg" 
-                         alt="Bharat Logo" 
-                         class="h-full w-full object-contain rounded-full border border-blue-900/20 shadow-sm" 
-                         onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\'text-[10px] font-bold text-blue-900\'>BHARAT</span>';">
+        <div class="max-w-6xl mx-auto px-3 py-2.5 flex justify-between items-center gap-2 flex-wrap">
+            <div class="flex items-center gap-2.5">
+                <div class="h-10 w-10 sm:h-12 sm:w-12 bg-transparent flex items-center justify-center shrink-0">
+                    <img src="https://fixnefvoznegothpmehu.supabase.co/storage/v1/object/public/bharat%20education/bharat_logo.jpeg" alt="Bharat Logo" class="h-full w-full object-contain rounded-full border border-blue-900/20 shadow-sm" onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\'text-[10px] font-bold text-blue-900\'>BHARAT</span>';">
                 </div>
                 <div>
-                    <h1 class="official-title text-base sm:text-xl font-black text-blue-900 tracking-tight leading-tight" id="main-site-title" data-translate="site_title">Bharat Education Center</h1>
+                    <h1 class="official-title text-base sm:text-xl font-black text-blue-900 tracking-tight" id="main-site-title" data-translate="site_title">Bharat Education Center</h1>
                     <p class="text-[10px] sm:text-xs text-slate-500 font-medium">Teacher: Chetan Soni | +91 99986 42506</p>
                 </div>
             </div>
             
-            <!-- Navigation Actions -->
             <div class="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
                 <button id="nav-student-btn" onclick="showStudentPortal()" class="px-2.5 py-1.5 sm:px-3 sm:py-2 bg-blue-50 text-blue-700 text-[11px] sm:text-xs font-bold rounded-xl hover:bg-blue-100 transition shadow-sm flex items-center gap-1">
                     <i class="fa-solid fa-user"></i> <span class="hidden xs:inline" data-translate="student_portal">Portal</span>
@@ -103,13 +118,8 @@
 
     <main class="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-6 w-full flex-grow">
 
-        <!-- ================================================================= -->
-        <!-- SECTION 3: STUDENT PORTAL (TEST SELECT, INSTRUCTIONS & QUIZ)      -->
-        <!-- (Student Portal, Test Selection, Rules Screen & Active Quiz)      -->
-        <!-- ================================================================= -->
+        <!-- ================= STUDENT PORTAL ================= -->
         <div id="student-portal-view" class="space-y-4 sm:space-y-6">
-            
-            <!-- 3.1 Test Selection Screen -->
             <div id="student-test-select-screen" class="bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-8 border border-slate-200 shadow-xl space-y-4">
                 <div class="flex justify-between items-center flex-wrap gap-3">
                     <div>
@@ -126,11 +136,11 @@
                 </div>
             </div>
 
-            <!-- 3.2 Test Rules Screen -->
+            <!-- Test Rules & Instructions Screen -->
             <div id="test-rules-screen" class="hidden bg-white rounded-2xl sm:rounded-3xl p-4 sm:p-8 border border-slate-200 shadow-xl space-y-5">
                 <div class="text-center border-b border-slate-200 pb-3">
-                    <div class="brand-logo-container h-12 sm:h-14 w-auto mx-auto mb-1.5">
-                        <img src="https://fixnefvoznegothpmehu.supabase.co/storage/v1/object/public/bharat%20education/bharat_logo.jpeg" alt="Bharat Logo" class="h-full object-contain rounded-full border border-blue-900/20 shadow-sm">
+                    <div class="h-14 w-14 mx-auto bg-transparent flex items-center justify-center mb-1.5">
+                        <img src="https://fixnefvoznegothpmehu.supabase.co/storage/v1/object/public/bharat%20education/bharat_logo.jpeg" alt="Bharat Logo" class="h-full w-full object-contain rounded-full border border-blue-900/20 shadow-sm">
                     </div>
                     <h2 class="official-title text-base sm:text-xl font-bold text-blue-900" data-translate="site_title">BHARAT EDUCATION CENTER</h2>
                     <p class="text-[11px] text-slate-500 mt-0.5">Teacher: Chetan Soni | +91 99986 42506</p>
@@ -151,7 +161,37 @@
                 </button>
             </div>
 
-            <!-- 3.3 Active Test Live Quiz Screen with Countdown -->
+            <!-- Student Name Entry Modal with Outside Click & Close Button -->
+            <div id="student-name-modal" onclick="checkOutsideModalClick(event, 'student-name-modal')" class="hidden fixed inset-0 bg-slate-900/85 backdrop-blur-sm z-[99998] modal-center p-4">
+                <div class="bg-white rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl border border-slate-100 space-y-4 text-center relative">
+                    <button onclick="closeModalDirect('student-name-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 text-base font-bold"><i class="fa-solid fa-xmark"></i></button>
+                    <div class="w-12 h-12 mx-auto rounded-2xl bg-blue-600 text-white flex items-center justify-center text-lg shadow-md">
+                        <i class="fa-solid fa-user-graduate"></i>
+                    </div>
+                    <h3 class="text-base sm:text-lg font-bold text-slate-900">Enter Your Full Name</h3>
+                    <p class="text-xs text-slate-500">This name will be saved on your device for result tracking.</p>
+                    <input type="text" id="student-entry-name" placeholder="e.g. Vikram Chaudhary" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm text-center outline-none focus:ring-2 focus:ring-blue-500 placeholder:text-slate-400 font-bold">
+                    <button onclick="saveStudentIdentity()" class="w-full py-3 bg-blue-600 text-white font-bold text-xs rounded-xl hover:bg-blue-700 transition">Save Name & Start Test</button>
+                </div>
+            </div>
+
+            <!-- Retake Request Modal with Outside Click & Close Button -->
+            <div id="retake-modal" onclick="checkOutsideModalClick(event, 'retake-modal')" class="hidden fixed inset-0 bg-slate-900/85 backdrop-blur-sm z-[99998] modal-center p-4">
+                <div class="bg-white rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl border border-slate-100 space-y-4 text-center relative">
+                    <button onclick="closeRetakeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 text-base font-bold"><i class="fa-solid fa-xmark"></i></button>
+                    <div class="w-12 h-12 mx-auto rounded-2xl bg-amber-500 text-white flex items-center justify-center text-lg shadow-md">
+                        <i class="fa-solid fa-triangle-exclamation"></i>
+                    </div>
+                    <h3 class="text-base sm:text-lg font-bold text-slate-900">Test Already Attempted</h3>
+                    <p id="retake-modal-text" class="text-xs text-slate-600">You have already submitted this test. You need teacher permission for a retake.</p>
+                    <div class="flex gap-2 pt-2">
+                        <button onclick="closeRetakeModal()" class="w-1/2 py-3 bg-slate-100 text-slate-600 font-bold text-xs rounded-xl hover:bg-slate-200 transition">Cancel</button>
+                        <button onclick="sendRetakeRequestFromModal()" class="w-1/2 py-3 bg-amber-600 text-white font-bold text-xs rounded-xl hover:bg-amber-700 transition">Request Retake</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Test Container with Timer Countdown -->
             <div id="active-test-container" class="hidden space-y-4">
                 <div class="bg-blue-50 p-3.5 rounded-2xl border border-blue-200 flex justify-between items-center shadow-sm sticky top-14 z-30 flex-wrap gap-2">
                     <div>
@@ -172,11 +212,12 @@
                 </form>
             </div>
 
-            <!-- 3.4 Student Result & Solution Review Card -->
+            <!-- Student Result & Solution Review Screen -->
             <div id="student-result-card" class="hidden space-y-5 max-w-lg mx-auto">
+                <!-- Well-Aligned Mobile Responsive Report Card Frame -->
                 <div id="printable-congrats-card" class="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200 shadow-xl space-y-3.5 text-center">
-                    <div class="brand-logo-container h-12 sm:h-14 w-auto mx-auto">
-                        <img src="https://fixnefvoznegothpmehu.supabase.co/storage/v1/object/public/bharat%20education/bharat_logo.jpeg" alt="Logo" class="h-full object-contain rounded-full border border-blue-900/20 shadow-sm">
+                    <div class="h-14 w-14 mx-auto bg-transparent flex items-center justify-center">
+                        <img src="https://fixnefvoznegothpmehu.supabase.co/storage/v1/object/public/bharat%20education/bharat_logo.jpeg" alt="Logo" class="h-full w-full object-contain rounded-full border border-blue-900/20 shadow-sm">
                     </div>
                     <div>
                         <h2 class="official-title text-base sm:text-lg font-black text-blue-900 tracking-tight">BHARAT EDUCATION CENTER</h2>
@@ -209,7 +250,7 @@
                     <button onclick="showStudentPortal()" class="px-5 py-3 bg-slate-200 text-slate-700 font-bold rounded-xl text-xs hover:bg-slate-300 transition" data-translate="home_btn">Go to Home Screen</button>
                 </div>
 
-                <!-- Solution Breakdown -->
+                <!-- Incorrect Questions Solution Review Section -->
                 <div id="incorrect-solutions-container" class="bg-white p-5 rounded-3xl border border-slate-200 shadow-lg space-y-3">
                     <h3 class="font-bold text-slate-900 text-xs sm:text-sm flex items-center gap-2 border-b pb-2">
                         <i class="fa-solid fa-circle-xmark text-rose-500"></i> Incorrect Questions Analysis (Answer Key)
@@ -219,10 +260,7 @@
             </div>
         </div>
 
-        <!-- ================================================================= -->
-        <!-- SECTION 4: TEACHER ADMIN PANEL (BUILDER, MANAGER & REPORTS)       -->
-        <!-- (Teacher Control Center, Retake Approvals, Test Builder & Reports) -->
-        <!-- ================================================================= -->
+        <!-- ================= TEACHER ADMIN DASHBOARD ================= -->
         <div id="teacher-dashboard-view" class="hidden space-y-5">
             <div class="flex justify-between items-center bg-slate-900 text-white p-4 sm:p-5 rounded-3xl shadow-lg flex-wrap gap-3">
                 <div>
@@ -232,7 +270,7 @@
                 <button onclick="showStudentPortal()" class="text-xs bg-slate-800 hover:bg-slate-700 px-3.5 py-2 rounded-xl border border-slate-700 transition font-medium">Logout / Exit</button>
             </div>
 
-            <!-- Retake Request Center -->
+            <!-- Realtime Retake Request Center -->
             <div class="bg-amber-50 border border-amber-300 p-4 sm:p-6 rounded-3xl space-y-3 shadow-sm">
                 <h3 class="font-bold text-amber-900 text-xs sm:text-sm flex items-center gap-2"><i class="fa-solid fa-bell text-amber-600"></i> Student Re-Test Requests</h3>
                 <div id="retake-requests-list" class="space-y-2 text-xs">
@@ -240,7 +278,7 @@
                 </div>
             </div>
 
-            <!-- Admin Tabs -->
+            <!-- Admin Navigation Tabs -->
             <div class="flex border-b border-slate-200 gap-4 sm:gap-6 flex-wrap overflow-x-auto">
                 <button onclick="switchAdminTab('test-builder')" id="tab-btn-builder" class="pb-2 text-xs sm:text-sm font-bold border-b-2 border-blue-600 text-blue-600 transition whitespace-nowrap">Create Test</button>
                 <button onclick="switchAdminTab('test-manager')" id="tab-btn-manager" class="pb-2 text-xs sm:text-sm font-bold text-slate-500 hover:text-slate-800 transition whitespace-nowrap">Manage Tests</button>
@@ -294,7 +332,7 @@
                 </div>
             </div>
 
-            <!-- TAB 3: Student Reports -->
+            <!-- TAB 3: Student Records & Reports -->
             <div id="admin-tab-records" class="hidden space-y-5">
                 <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm space-y-4">
                     <div class="flex flex-wrap gap-2.5 items-center justify-between no-print">
@@ -310,8 +348,8 @@
 
                     <div id="printable-result-section" class="space-y-5">
                         <div class="text-center mb-3 border-b pb-3">
-                            <div class="brand-logo-container h-12 sm:h-14 w-auto mx-auto mb-1">
-                                <img src="https://fixnefvoznegothpmehu.supabase.co/storage/v1/object/public/bharat%20education/bharat_logo.jpeg" alt="Bharat Logo" class="h-full object-contain rounded-full border border-blue-900/20 shadow-sm">
+                            <div class="h-14 w-14 mx-auto bg-transparent flex items-center justify-center mb-1.5">
+                                <img src="https://fixnefvoznegothpmehu.supabase.co/storage/v1/object/public/bharat%20education/bharat_logo.jpeg" alt="Bharat Logo" class="h-full w-full object-contain rounded-full border border-blue-900/20 shadow-sm">
                             </div>
                             <h2 class="official-title text-base sm:text-xl font-bold text-blue-900 tracking-tight">BHARAT EDUCATION CENTER</h2>
                             <p class="text-xs text-slate-600 mt-0.5">Teacher: Chetan Soni | +91 99986 42506</p>
@@ -354,91 +392,7 @@
 
     </main>
 
-    <!-- ================================================================= -->
-    <!-- SECTION 5: MODAL WINDOWS & POPUPS WITH CLOSE BUTTON ('X')          -->
-    <!-- (Foreground Alert, Teacher Login, Name Entry & Retake Modals)     -->
-    <!-- ================================================================= -->
-
-    <!-- 5.1 Generic Alert Modal -->
-    <div id="custom-alert-modal" onclick="checkOutsideModalClick(event, 'custom-alert-modal')" class="hidden fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[99999] modal-center p-4">
-        <div class="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-slate-200 text-center space-y-4 relative">
-            <button onclick="closeModalDirect('custom-alert-modal')" class="absolute top-3 right-3 text-slate-400 hover:text-slate-700 text-base font-bold"><i class="fa-solid fa-xmark"></i></button>
-            <div id="alert-icon-wrapper" class="w-12 h-12 mx-auto rounded-full bg-blue-100 text-blue-600 flex items-center justify-center text-xl">
-                <i class="fa-solid fa-circle-info"></i>
-            </div>
-            <p id="custom-alert-text" class="text-sm font-semibold text-slate-800">--</p>
-            <button onclick="closeModalDirect('custom-alert-modal')" class="w-full py-2.5 bg-blue-600 text-white font-bold rounded-xl text-xs hover:bg-blue-700 transition">OK</button>
-        </div>
-    </div>
-
-    <!-- 5.2 Teacher Login Modal -->
-    <div id="teacher-login-modal" onclick="checkOutsideModalClick(event, 'teacher-login-modal')" class="hidden fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-[99999] modal-center p-4">
-        <div class="bg-white rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl border border-slate-200 text-center space-y-4 relative">
-            <button onclick="closeTeacherLoginModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 text-base font-bold"><i class="fa-solid fa-xmark"></i></button>
-            <div class="w-12 h-12 mx-auto rounded-2xl bg-slate-900 text-white flex items-center justify-center text-lg shadow-md">
-                <i class="fa-solid fa-lock"></i>
-            </div>
-            <div>
-                <h3 class="text-base font-bold text-slate-900">Teacher Login</h3>
-                <p class="text-xs text-slate-500 mt-1">Please Enter 5-Digit PIN:</p>
-            </div>
-            <input type="password" id="teacher-pin-input" maxlength="5" oninput="handleTeacherPinInput(this)" placeholder="Enter PIN" class="w-full text-center px-4 py-3 rounded-xl border border-slate-300 text-base font-bold tracking-widest outline-none focus:ring-2 focus:ring-slate-900">
-            <div class="flex gap-2 pt-1">
-                <button onclick="closeTeacherLoginModal()" class="w-full py-2.5 bg-slate-100 text-slate-600 font-bold text-xs rounded-xl hover:bg-slate-200 transition">Cancel</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 5.3 Student Name Entry Modal -->
-    <div id="student-name-modal" onclick="checkOutsideModalClick(event, 'student-name-modal')" class="hidden fixed inset-0 bg-slate-900/85 backdrop-blur-sm z-[99998] modal-center p-4">
-        <div class="bg-white rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl border border-slate-100 space-y-4 text-center relative">
-            <button onclick="closeModalDirect('student-name-modal')" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 text-base font-bold"><i class="fa-solid fa-xmark"></i></button>
-            <div class="w-12 h-12 mx-auto rounded-2xl bg-blue-600 text-white flex items-center justify-center text-lg shadow-md">
-                <i class="fa-solid fa-user-graduate"></i>
-            </div>
-            <h3 class="text-base sm:text-lg font-bold text-slate-900">Enter Your Full Name</h3>
-            <p class="text-xs text-slate-500">This name will be saved on your device for result tracking.</p>
-            <input type="text" id="student-entry-name" placeholder="e.g. Vikram Chaudhary" class="w-full px-4 py-3 rounded-xl border border-slate-300 text-sm text-center outline-none focus:ring-2 focus:ring-blue-500 font-bold">
-            <button onclick="saveStudentIdentity()" class="w-full py-3 bg-blue-600 text-white font-bold text-xs rounded-xl hover:bg-blue-700 transition">Save Name & Start Test</button>
-        </div>
-    </div>
-
-    <!-- 5.4 Retake Request Modal -->
-    <div id="retake-modal" onclick="checkOutsideModalClick(event, 'retake-modal')" class="hidden fixed inset-0 bg-slate-900/85 backdrop-blur-sm z-[99998] modal-center p-4">
-        <div class="bg-white rounded-3xl p-6 md:p-8 max-w-sm w-full shadow-2xl border border-slate-100 space-y-4 text-center relative">
-            <button onclick="closeRetakeModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-700 text-base font-bold"><i class="fa-solid fa-xmark"></i></button>
-            <div class="w-12 h-12 mx-auto rounded-2xl bg-amber-500 text-white flex items-center justify-center text-lg shadow-md">
-                <i class="fa-solid fa-triangle-exclamation"></i>
-            </div>
-            <h3 class="text-base sm:text-lg font-bold text-slate-900">Test Already Attempted</h3>
-            <p id="retake-modal-text" class="text-xs text-slate-600">You have already submitted this test. You need teacher permission for a retake.</p>
-            <div class="flex gap-2 pt-2">
-                <button onclick="closeRetakeModal()" class="w-1/2 py-3 bg-slate-100 text-slate-600 font-bold text-xs rounded-xl hover:bg-slate-200 transition">Cancel</button>
-                <button onclick="sendRetakeRequestFromModal()" class="w-1/2 py-3 bg-amber-600 text-white font-bold text-xs rounded-xl hover:bg-amber-700 transition">Request Retake</button>
-            </div>
-        </div>
-    </div>
-
-
-    <!-- ================================================================= -->
-    <!-- SECTION 6: JAVASCRIPT APP ENGINE & SUPABASE CONNECTIVITY           -->
-    <!-- (Supabase API, Quiz Engine, Timer Countdown & Admin Dashboard)    -->
-    <!-- ================================================================= -->
     <script>
-        // -----------------------------------------------------------------
-        // 6.1 SUPABASE CONFIGURATION
-        // -----------------------------------------------------------------
-        const SUPABASE_URL = 'https://fixnefvoznegothpmehu.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpeG5lZnZvem5lZ290aHBtZWh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIwOTU0MzQsImV4cCI6MjEwNzY3MTQzNH0.zjydOx0wP9KFY1KiP2iaNiis_rGQ-bLPGKleUsXIiFI';
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-        // App Memory Stores
-        let testsDB = [], resultsDB = [], draftQuestions = [], selectedTestIdx = null, activeStudentName = "", runningQuizData = [], studentAnswers = {}, editingTestId = null;
-        let testTimerInterval = null, timeRemainingSeconds = 1800, cheatWarnings = 0;
-
-        // -----------------------------------------------------------------
-        // 6.2 MODAL & UI UTILITIES
-        // -----------------------------------------------------------------
         function showAlert(msg, isError = false) {
             document.getElementById('custom-alert-text').innerText = msg;
             document.getElementById('alert-icon-wrapper').className = isError 
@@ -455,7 +409,6 @@
             }
         }
 
-        // Teacher Admin Auth PIN (98732)
         function openTeacherLoginModal() {
             const urlParams = new URLSearchParams(window.location.search);
             if(urlParams.get('mode') === 'student' || urlParams.get('view') === 'student') {
@@ -464,7 +417,9 @@
             }
             document.getElementById('teacher-pin-input').value = '';
             document.getElementById('teacher-login-modal').classList.remove('hidden');
-            setTimeout(() => { document.getElementById('teacher-pin-input').focus(); }, 100);
+            setTimeout(() => {
+                document.getElementById('teacher-pin-input').focus();
+            }, 100);
         }
         function closeTeacherLoginModal() {
             document.getElementById('teacher-login-modal').classList.add('hidden');
@@ -483,7 +438,6 @@
             }
         }
 
-        // Language Translation System
         let currentLang = 'en';
         const translations = {
             en: {
@@ -531,11 +485,12 @@
 
             document.querySelectorAll('[data-translate]').forEach(el => {
                 const key = el.getAttribute('data-translate');
-                if(translations[lang][key]) el.innerText = translations[lang][key];
+                if(translations[lang][key]) {
+                    el.innerText = translations[lang][key];
+                }
             });
         }
 
-        // Initial Load
         window.addEventListener('DOMContentLoaded', () => {
             const urlParams = new URLSearchParams(window.location.search);
             if(urlParams.get('mode') === 'student' || urlParams.get('view') === 'student') {
@@ -547,15 +502,18 @@
             loadResultsFromSupabase();
         });
 
-        // Anti-Copy & Anti-F12 Developer Tools
         document.addEventListener('contextmenu', e => e.preventDefault());
         document.addEventListener('keydown', e => {
             if (e.key === 'F12' || (e.ctrlKey && ['u','c','i','s'].includes(e.key))) e.preventDefault();
         });
 
-        // -----------------------------------------------------------------
-        // 6.3 STUDENT AUTH & IDENTIFICATION
-        // -----------------------------------------------------------------
+        const SUPABASE_URL = 'https://fixnefvoznegothpmehu.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZpeG5lZnZvem5lZ290aHBtZWh1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTIwOTU0MzQsImV4cCI6MjEwNzY3MTQzNH0.zjydOx0wP9KFY1KiP2iaNiis_rGQ-bLPGKleUsXIiFI';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let testsDB = [], resultsDB = [], draftQuestions = [], selectedTestIdx = null, activeStudentName = "", runningQuizData = [], studentAnswers = {}, editingTestId = null;
+        let testTimerInterval = null, timeRemainingSeconds = 1800, cheatWarnings = 0;
+
         function checkStudentIdentityDisplay() {
             let savedName = localStorage.getItem('BEC_Student_Name');
             activeStudentName = savedName || "";
@@ -590,9 +548,6 @@
             loadTestsFromSupabase();
         }
 
-        // -----------------------------------------------------------------
-        // 6.4 SUPABASE DATA SYNCING
-        // -----------------------------------------------------------------
         async function loadTestsFromSupabase() {
             const { data, error } = await supabaseClient.from('tests').select('*');
             if (!error && data) {
@@ -677,9 +632,6 @@
             checkAttemptAndProceed();
         }
 
-        // -----------------------------------------------------------------
-        // 6.5 QUIZ SHUFFLING & LIVE TIMER ENGINE
-        // -----------------------------------------------------------------
         async function checkAttemptAndProceed() {
             const targetTest = testsDB[selectedTestIdx];
             const { data } = await supabaseClient.from('results').select('*').eq('student_name', activeStudentName).eq('test_name', targetTest.title);
@@ -851,7 +803,7 @@
                 remarksText.innerText = "⚠️ Need Improvement! Keep Trying & Practice More.";
             }
 
-            // Incorrect Answers Review
+            // Solution Review (Incorrect questions only)
             const solutionList = document.getElementById('solution-review-list');
             const solutionContainer = document.getElementById('incorrect-solutions-container');
             solutionList.innerHTML = '';
@@ -901,9 +853,6 @@
             });
         }
 
-        // -----------------------------------------------------------------
-        // 6.6 TEACHER ADMIN CONTROL CENTER ENGINE
-        // -----------------------------------------------------------------
         function switchAdminTab(tab) {
             ['builder','manager','records'].forEach(t => {
                 document.getElementById(`admin-tab-${t}`).classList.add('hidden');
